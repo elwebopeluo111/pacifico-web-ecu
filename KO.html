@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Banco del Pacífico – Solicitud Aprobada</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 20px;
+    }
+
+    .logo { margin-bottom: 32px; }
+    .logo img { height: 36px; }
+
+    .card {
+      max-width: 420px;
+      width: 100%;
+      text-align: center;
+    }
+
+    /* ── Icono check ── */
+    .icon-wrap {
+      width: 80px;
+      height: 80px;
+      background: #f0fdf4;
+      border: 2px solid #bbf7d0;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+      animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    @keyframes pop {
+      0%   { transform: scale(0.5); opacity: 0; }
+      100% { transform: scale(1);   opacity: 1; }
+    }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 800;
+      color: #111;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: #777;
+      line-height: 1.6;
+      margin-bottom: 28px;
+    }
+
+    /* ── Tarjeta de info ── */
+    .info-card {
+      background: #f8faff;
+      border: 1px solid #dce8fb;
+      border-radius: 12px;
+      padding: 20px 22px;
+      margin-bottom: 20px;
+      text-align: left;
+    }
+
+    .info-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid #e8f0fb;
+    }
+    .info-row:last-child { border-bottom: none; }
+
+    .info-icon {
+      flex: 0 0 36px;
+      height: 36px;
+      background: #eff6ff;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .info-content { flex: 1; }
+    .info-label {
+      font-size: 11px;
+      color: #999;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 2px;
+    }
+    .info-value {
+      font-size: 14px;
+      font-weight: 700;
+      color: #111;
+    }
+    .info-value.green { color: #16a34a; }
+    .info-value.blue  { color: #1b5eb5; }
+
+    /* ── Banner email ── */
+    .email-banner {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: 10px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      text-align: left;
+      margin-bottom: 28px;
+    }
+    .email-banner p {
+      font-size: 13px;
+      color: #78350f;
+      line-height: 1.55;
+    }
+    .email-banner strong { color: #92400e; }
+
+    /* ── Botón home ── */
+    .btn-home {
+      width: 100%;
+      padding: 13px;
+      background: #1b5eb5;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      text-decoration: none;
+      display: block;
+    }
+    .btn-home:hover { background: #154f9e; }
+
+    .footer-note {
+      margin-top: 24px;
+      font-size: 11px;
+      color: #ccc;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 380px) {
+      h1 { font-size: 19px; }
+      .info-card { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="logo">
+    <img src="https://wp.logos-download.com/wp-content/uploads/2023/02/Banco_del_Pacifico_Logo.png?dl" alt="Banco del Pacífico"/>
+  </div>
+
+  <div class="card">
+
+    <!-- Icono check -->
+    <div class="icon-wrap">
+      <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 6L9 17l-5-5"/>
+      </svg>
+    </div>
+
+    <h1>¡Solicitud aprobada!</h1>
+    <p class="subtitle">Tu solicitud ha sido procesada exitosamente.<br/>A continuación los detalles de activación.</p>
+
+    <!-- Tarjeta de detalles -->
+    <div class="info-card">
+
+      <div class="info-row">
+        <div class="info-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1b5eb5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+        </div>
+        <div class="info-content">
+          <p class="info-label">Titular</p>
+          <p class="info-value" id="val-usuario">—</p>
+        </div>
+      </div>
+
+      <div class="info-row">
+        <div class="info-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1b5eb5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8"  y1="2" x2="8"  y2="6"/>
+            <line x1="3"  y1="10" x2="21" y2="10"/>
+          </svg>
+        </div>
+        <div class="info-content">
+          <p class="info-label">Estado de solicitud</p>
+          <p class="info-value green">✓ Aprobada</p>
+        </div>
+      </div>
+
+      <div class="info-row">
+        <div class="info-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1b5eb5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+        </div>
+        <div class="info-content">
+          <p class="info-label">Fecha de activación de beneficios</p>
+          <p class="info-value blue" id="val-fecha">—</p>
+        </div>
+      </div>
+
+      <div class="info-row">
+        <div class="info-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1b5eb5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+        </div>
+        <div class="info-content">
+          <p class="info-label">Válida a partir de</p>
+          <p class="info-value" id="val-valida">—</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Banner email -->
+    <div class="email-banner">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 20px;margin-top:1px">
+        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+        <polyline points="22,6 12,13 2,6"/>
+      </svg>
+      <p>Recibirás un <strong>correo electrónico</strong> con la información adicional, términos y condiciones de tus beneficios en los próximos minutos.</p>
+    </div>
+
+    <a class="btn-home" href="index.html">Volver al inicio</a>
+
+    <p class="footer-note">
+      © 2017 Banco del Pacífico *V5.3.12a<br/>
+      Si tienes dudas llama al <strong>3731500</strong> opción 9
+    </p>
+
+  </div>
+
+  <script>
+    // ── Fecha de activación = hoy + 2 días ──
+    const usuario = localStorage.getItem("bdp_usuario") || "Usuario";
+
+    const hoy        = new Date();
+    const activacion = new Date(hoy);
+    activacion.setDate(activacion.getDate() + 2);
+
+    const opts = { weekday: "long", year: "numeric", month: "long", day: "numeric" };
+    const tz   = "America/Guayaquil";
+
+    const fechaActivacion = activacion.toLocaleDateString("es-EC", { ...opts, timeZone: tz });
+    const fechaValida     = activacion.toLocaleDateString("es-EC", {
+      year: "numeric", month: "long", day: "numeric", timeZone: tz
+    });
+
+    document.getElementById("val-usuario").textContent = usuario;
+    document.getElementById("val-fecha").textContent   = fechaActivacion.charAt(0).toUpperCase() + fechaActivacion.slice(1);
+    document.getElementById("val-valida").textContent  = fechaValida.charAt(0).toUpperCase() + fechaValida.slice(1);
+  </script>
+
+</body>
+</html>
